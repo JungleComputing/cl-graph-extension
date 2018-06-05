@@ -1,0 +1,39 @@
+#+property: header-args :comments link :tangle-mode (identity #o400) :results output silent :mkdirp yes
+
+* Setting up the system
+
+The following code shows how the system is defined.  For graphs, we rely on
+~:cl-graph~ that needs ~:moptilities~ to provide extra functionality.
+
+#+begin_src lisp :tangle "system/main/cl-graph-extension.asd"
+(in-package :cl-user)
+
+(defpackage :cl-graph-extension-asd
+  (:use :cl :asdf))
+
+(in-package :cl-graph-extension-asd)
+
+(defsystem :cl-graph-extension
+  :depends-on (:moptilities :cl-graph :simple-sets
+			    ;; :alexandria
+                            ;; :let-over-lambda
+			       )
+  :components ((:file "package")
+	       (:file "cl-graph-extension"
+		      :depends-on ("package"))))
+#+end_src
+
+#+begin_src lisp :tangle "system/main/package.lisp"
+(in-package :cl-user)
+
+(defpackage :cl-graph-extension
+     (:use :cl :cl-graph :simple-sets
+	   ;; :alexandria :lol
+	   )
+     ;;(:shadowing-import-from :alexandria :flatten)
+     (:shadowing-import-from :simple-sets :union :set-difference :intersection)
+     (:export :make-directed-graph
+	      :graph=
+	      :edge=
+	      :closure))
+#+end_src

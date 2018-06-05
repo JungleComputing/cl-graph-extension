@@ -1,0 +1,79 @@
+#+property: header-args :comments link :tangle-mode (identity #o400) :results output silent :mkdirp yes
+
+* The extension
+  :PROPERTIES:
+  :header-args+: :package ":cl-graph-extension"
+  :header-args+: :tangle "system/main/cl-graph-extension.lisp"
+  :END:
+
+The following functions build on the ~:cl-graph~ package:
+
+#+begin_src lisp
+(in-package :cl-graph-extension)
+
+(defun edge= (e1 e2 &key (test #'eql))
+  (and
+   (funcall test
+    (element (vertex-1 e1))
+    (element (vertex-1 e2)))
+   (funcall test
+    (element (vertex-2 e1))
+    (element (vertex-2 e2)))))
+    
+(defun graph= (g1 g2 &key (test #'eql))
+  (labels ((cmp (e1 e2)
+	     (edge= e1 e2 :test test)))
+    (let ((v1 (make-set :test test :elements (mapcar #'element (vertexes g1))))
+	  (v2 (make-set :test test :elements (mapcar #'element (vertexes g2))))
+	  (e1 (make-set :test #'cmp :elements (edges g1)))
+	  (e2 (make-set :test #'cmp :elements (edges g2))))
+      (and
+       (set= v1 v2)
+       (set= e1 e2)))))
+	
+(defun make-directed-graph ()
+   (make-graph 'graph-container :default-edge-type :directed))
+#+end_src
+
+The function ~cl-graph:get-transitive-closure~ does not take direction into
+account.  The following function modifies the function to achieve a closure:
+
+#+begin_src lisp
+(defun closure (graph vertices)
+  (let ((vertices (mapcar #'(lambda (vertex)
+			      (find-vertex graph vertex)) vertices)))
+    (make-graph-from-vertexes (my-get-transitive-closure vertices))))
+
+(defun my-get-nodelist-relatives (node-list)
+  "Collects set of unique relatives of nodes in node-list."
+  (let ((unique-relatives nil))
+    (dolist (node node-list)
+      (setf unique-relatives
+            (cl-graph::append-unique (child-vertexes node) unique-relatives)))
+    unique-relatives))
+
+(defun my-get-transitive-closure (vertex-list &optional (depth nil))
+  "Given a list of vertices, returns a combined list of all of the nodes
+in the transitive closure(s) of each of the vertices in the list
+.  Optional DEPTH limits the depth (in _both_ the
+child and parent directions) to which the closure is gathered; default
+nil gathers the entire closure(s)."
+
+  #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+  (labels ((collect-transitive-closure (remaining visited depth)
+	             (if (and remaining
+                      (typecase depth
+                        (null t)
+                        (fixnum (>= (decf depth) 0))))
+
+              (let* ((non-visited-relatives     ;; list of relatives not yet visited
+                       (cl-graph::remove-list visited
+                                    (my-get-nodelist-relatives remaining)))
+                      (visited-nodes            ;; list of nodes visited so far
+                       (cl-graph::append-unique non-visited-relatives visited)))
+                 (collect-transitive-closure non-visited-relatives
+                                             visited-nodes
+                                             depth))
+               (values visited))))
+    (collect-transitive-closure vertex-list vertex-list depth)))
+#+end_src
