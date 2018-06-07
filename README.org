@@ -1,0 +1,18 @@
+#+title: An Extension for ~cl-graph~
+
+* Introduction
+
+This is a small package that extends the Common Lisp package ~cl-graph~ a bit.
+It adds a check for equality and edges and a closure that works for directed
+graphs.  Since this code, uses two functions that are virtually the same as in
+the original ~cl-graph~, we use the same license as ~cl-graph~ and also add
+their copyright preambles.  The code is written in [[https://orgmode.org/][Org-mode]] that exports to
+the actual Common Lisp code and documentation.
+
+* License
+
+The code has been released under the same license as ~cl-graph~.
+
+* Copyright
+
+Pieter Hijma 2018
